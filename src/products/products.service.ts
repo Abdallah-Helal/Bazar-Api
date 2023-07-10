@@ -13,6 +13,7 @@ import { Repository } from 'typeorm';
 import { CategoriesService } from 'src/categories/categories.service';
 import { UserEntity } from 'src/users/entities/user.entity';
 import dataSource from 'db/data-source';
+import { OrdersService } from 'src/orders/orders.service';
 import { OrderStatus } from 'src/orders/enum/order-status.enum';
 
 @Injectable()
@@ -21,6 +22,8 @@ export class ProductsService {
     @InjectRepository(ProductEntity)
     private readonly productRepository: Repository<ProductEntity>,
     private readonly categoryService: CategoriesService,
+    @Inject(forwardRef(() => OrdersService))
+    private readonly orderService: OrdersService,
   ) {}
 
   async create(
@@ -151,6 +154,10 @@ export class ProductsService {
 
   async remove(id: number) {
     const product = await this.findOne(id);
+    console.log(product);
+    const order = await this.orderService.findOneByProductId(product.id);
+    if (order) throw new BadRequestException('Products is in use.');
+
     return await this.productRepository.remove(product);
   }
 
